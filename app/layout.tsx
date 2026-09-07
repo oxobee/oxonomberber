@@ -4,58 +4,24 @@ import { Inter } from "next/font/google"
 import { Toaster } from "sonner"
 import NextTopLoader from "nextjs-toploader"
 
-import AuthProvider from "./_providers/auth"
-
+import { AuthProvider } from "./_providers/auth"
 import { Footer } from "./_components/footer"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "The Barber",
-  description: "Book the best ones with The Barber",
-  applicationName: "The Barber",
-  referrer: "origin",
-  creator: "Jefferson Soares",
-  publisher: "Jefferson Soares",
-  icons: {
-    icon: "/images/thebarber.png",
-    shortcut: "/images/thebarber.png",
-    apple: "/images/thebarber.png",
-  },
-  appleWebApp: {
-    capable: true,
-    title: "MyLinkIn",
-  },
-  authors: [
-    {
-      name: "SoaresDev",
-      url: "https://soaresdev.com",
-    },
-    {
-      name: "Jefferson Soares",
-      url: "https://links.soaresdev.com",
-    },
-  ],
+  title: "OxonomBerber | Kuaför & Berber Randevu Platformu",
+  description: "Türkiye'nin en iyi berber, kuaför ve güzellik salonlarından saniyeler içinde 7/24 online randevu alın.",
+  applicationName: "OxonomBerber",
   keywords: [
-    "Barbershop",
-    "The Barber",
-    "Barber",
-    "Hair cut",
-    "Beard",
-    "Eyebrows",
-    "Corte de cabelo",
-    "Sobrancelhas",
-    "Barbearia",
-    "Barbeiro",
+    "Berber Randevu",
+    "Kuaför Randevu",
+    "Erkek Kuaförü",
+    "Güzellik Salonu",
+    "İstanbul Berber",
+    "Online Randevu",
+    "OxonomBerber",
   ],
-  openGraph: {
-    type: "website",
-    url: "https://soaresdev.com",
-    title: "The Barber",
-    description: "Book the best ones with The Barber.",
-    siteName: "The Barber",
-    images: [{ url: "/images/social-banner.png" }],
-  },
 }
 
 export default function RootLayout({
@@ -64,26 +30,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link
-          rel="shortcut icon"
-          href="/images/thebarber.png"
-          type="image/png"
-        />
-        <title>The Barber</title>
-      </head>
+    <html lang="tr" className="dark">
       <body className={inter.className}>
         <NextTopLoader color="#8161FF" showSpinner={false} />
         <AuthProvider>
-          <div className="flex h-full flex-col">
-            <main className="flex-1">{children}</main>
+          <div className="flex min-h-screen flex-col">
+            <div className="flex-1">{children}</div>
             <Footer />
           </div>
         </AuthProvider>
-        <Toaster />
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   )

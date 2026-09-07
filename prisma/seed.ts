@@ -1,147 +1,297 @@
-const { PrismaClient } = require("@prisma/client")
+import { PrismaClient, UserRole, BusinessType, BookingStatus } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-async function seedDatabase() {
-  try {
-    const images = [
-      "https://utfs.io/f/c97a2dc9-cf62-468b-a851-bfd2bdde775f-16p.png",
-      "https://utfs.io/f/45331760-899c-4b4b-910e-e00babb6ed81-16q.png",
-      "https://utfs.io/f/5832df58-cfd7-4b3f-b102-42b7e150ced2-16r.png",
-      "https://utfs.io/f/7e309eaa-d722-465b-b8b6-76217404a3d3-16s.png",
-      "https://utfs.io/f/178da6b6-6f9a-424a-be9d-a2feb476eb36-16t.png",
-      "https://utfs.io/f/2f9278ba-3975-4026-af46-64af78864494-16u.png",
-      "https://utfs.io/f/988646ea-dcb6-4f47-8a03-8d4586b7bc21-16v.png",
-      "https://utfs.io/f/60f24f5c-9ed3-40ba-8c92-0cd1dcd043f9-16w.png",
-      "https://utfs.io/f/f64f1bd4-59ce-4ee3-972d-2399937eeafc-16x.png",
-      "https://utfs.io/f/e995db6d-df96-4658-99f5-11132fd931e1-17j.png",
-      "https://utfs.io/f/3bcf33fc-988a-462b-8b98-b811ee2bbd71-17k.png",
-      "https://utfs.io/f/5788be0e-2307-4bb4-b603-d9dd237950a2-17l.png",
-      "https://utfs.io/f/6b0888f8-b69f-4be7-a13b-52d1c0c9cab2-17m.png",
-      "https://utfs.io/f/ef45effa-415e-416d-8c4a-3221923cd10f-17n.png",
-      "https://utfs.io/f/ef45effa-415e-416d-8c4a-3221923cd10f-17n.png",
-      "https://utfs.io/f/a55f0f39-31a0-4819-8796-538d68cc2a0f-17o.png",
-      "https://utfs.io/f/5c89f046-80cd-4443-89df-211de62b7c2a-17p.png",
-      "https://utfs.io/f/23d9c4f7-8bdb-40e1-99a5-f42271b7404a-17q.png",
-      "https://utfs.io/f/9f0847c2-d0b8-4738-a673-34ac2b9506ec-17r.png",
-      "https://utfs.io/f/07842cfb-7b30-4fdc-accc-719618dfa1f2-17s.png",
-      "https://utfs.io/f/0522fdaf-0357-4213-8f52-1d83c3dcb6cd-18e.png",
-    ]
-    // Nomes criativos para as barbearias
-    const creativeNames = [
-      "Vintage Barbershop",
-      "Cut & Style",
-      "Beard & Blade",
-      "The Dapper Den",
-      "Hair & Co.",
-      "Axe & Scissors",
-      "Elegance Barbershop",
-      "Impeccable Look",
-      "Urban Style",
-      "Classic Style",
-    ]
+async function main() {
+  console.log("🌱 Türkçe Seed Verisi Yükleniyor...")
 
-    // Endereços fictícios para as barbearias
-    const addresses = [
-      "123 Barber St.",
-      "456 Clippers Ave.",
-      "789 Beard Plaza",
-      "101 Razor Ln.",
-      "202 Style Blvd.",
-      "303 Blade Rd.",
-      "404 Elegant Ave.",
-      "505 Appearance Sq.",
-      "606 Urban Dr.",
-      "707 Classic Blvd.",
-    ]
+  // Temizle
+  await prisma.review.deleteMany()
+  await prisma.favorite.deleteMany()
+  await prisma.booking.deleteMany()
+  await prisma.staffTimeOff.deleteMany()
+  await prisma.staffWorkingHours.deleteMany()
+  await prisma.staffService.deleteMany()
+  await prisma.service.deleteMany()
+  await prisma.staff.deleteMany()
+  await prisma.businessHours.deleteMany()
+  await prisma.business.deleteMany()
+  await prisma.user.deleteMany()
 
-    const services = [
-      {
-        name: "Haircut",
-        description: "Customized style with the latest trends.",
-        price: 60.0,
-        imageUrl:
-          "https://utfs.io/f/0ddfbd26-a424-43a0-aaf3-c3f1dc6be6d1-1kgxo7.png",
-      },
-      {
-        name: "Beard",
-        description: "Complete grooming to highlight your masculinity.",
-        price: 40.0,
-        imageUrl:
-          "https://utfs.io/f/e6bdffb6-24a9-455b-aba3-903c2c2b5bde-1jo6tu.png",
-      },
-      {
-        name: "Line Up",
-        description: "Perfect finish for a refreshed look.",
-        price: 35.0,
-        imageUrl:
-          "https://utfs.io/f/8a457cda-f768-411d-a737-cdb23ca6b9b5-b3pegf.png",
-      },
-      {
-        name: "Eyebrows",
-        description: "Enhanced expression with precise shaping.",
-        price: 20.0,
-        imageUrl:
-          "https://utfs.io/f/2118f76e-89e4-43e6-87c9-8f157500c333-b0ps0b.png",
-      },
-      {
-        name: "Massage",
-        description: "Relax with a refreshing massage.",
-        price: 50.0,
-        imageUrl:
-          "https://utfs.io/f/c4919193-a675-4c47-9f21-ebd86d1c8e6a-4oen2a.png",
-      },
-      {
-        name: "Hydration",
-        description: "Deep hydration for hair and beard.",
-        price: 25.0,
-        imageUrl:
-          "https://utfs.io/f/8a457cda-f768-411d-a737-cdb23ca6b9b5-b3pegf.png",
-      },
-    ]
+  // 1. Örnek Kullanıcılar
+  const ownerUser = await prisma.user.create({
+    data: {
+      name: "Ahmet",
+      surname: "Yılmaz",
+      email: "ahmet@oxonomberber.com",
+      phone: "+90 532 111 2233",
+      role: UserRole.BUSINESS_OWNER,
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    },
+  })
 
-    // Criar 10 barbearias com nomes e endereços fictícios
-    const barbershops = []
-    for (let i = 0; i < 10; i++) {
-      const name = creativeNames[i]
-      const address = addresses[i]
-      const imageUrl = images[i]
+  const customerUser = await prisma.user.create({
+    data: {
+      name: "Can",
+      surname: "Demir",
+      email: "can@example.com",
+      phone: "+90 555 999 8877",
+      role: UserRole.CUSTOMER,
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    },
+  })
 
-      const barbershop = await prisma.barbershop.create({
+  // 2. Örnek İşletmeler
+  const businessesData = [
+    {
+      name: "Moda Klasik Berber Salonu",
+      slug: "moda-klasik-berber-salonu",
+      type: BusinessType.BARBER,
+      description: "Kadıköy Moda'nın kalbinde geleneksel ustura tıraşı, modern saç kesimi ve kişiye özel saç bakımı hizmeti sunuyoruz.",
+      phone: "+90 216 333 4455",
+      email: "moda@oxonomberber.com",
+      address: "Moda Caddesi No: 42/A",
+      city: "İstanbul",
+      district: "Kadıköy",
+      coverImage: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1200&auto=format&fit=crop&q=80",
+      logo: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=200&auto=format&fit=crop&q=80",
+      active: true,
+      verified: true,
+      staffList: [
+        { name: "Mustafa", surname: "Usta", bio: "20 yıllık usta berber, klasik saç & sakal uzmanı.", phone: "+90 530 111 0001", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80" },
+        { name: "Burak", surname: "Kaya", bio: "Modern kesimler ve fade tıraş konusunda uzman.", phone: "+90 530 111 0002", image: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80" },
+      ],
+      servicesList: [
+        { name: "Klasik Saç Kesimi", description: "Yıkama, kesim ve stil fönü dahil.", price: 450, durationMinutes: 45 },
+        { name: "Sakal Şekillendirme & Tıraş", description: "Sıcak havlu eşliğinde geleneksel ustura tıraşı.", price: 250, durationMinutes: 30 },
+        { name: "Saç & Sakal Bakım Kombini", description: "Tam bakım: Saç kesimi, sakal tıraşı ve canlandırıcı maske.", price: 650, durationMinutes: 60 },
+        { name: "Detoks Saç & Cilt Bakımı", description: "Buharlı cilt temizliği ve saç kökü besleyici bakım.", price: 400, durationMinutes: 40 },
+      ],
+    },
+    {
+      name: "Bosphorus Beşiktaş Saç Stüdyosu",
+      slug: "bosphorus-besiktas-sac-studyosu",
+      type: BusinessType.HAIRDRESSER,
+      description: "Beşiktaş Çarşı'da ferah ve modern stüdyomuzda dünya trendleri saç kesimleri ve renklendirme işlemleri.",
+      phone: "+90 212 258 7788",
+      email: "besiktas@oxonomberber.com",
+      address: "Sinanpaşa Mah. Şair Nedim Cad. No: 18",
+      city: "İstanbul",
+      district: "Beşiktaş",
+      coverImage: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200&auto=format&fit=crop&q=80",
+      logo: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=200&auto=format&fit=crop&q=80",
+      active: true,
+      verified: true,
+      staffList: [
+        { name: "Serkan", surname: "Öztürk", bio: "Kreatif saç tasarımcısı ve renklendirme artisti.", phone: "+90 532 222 0001", image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop&q=80" },
+        { name: "Eren", surname: "Yıldız", bio: "Modern kesimler ve keratin terapi uzmanı.", phone: "+90 532 222 0002", image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80" },
+      ],
+      servicesList: [
+        { name: "Modern Saç Kesimi & Yıkama", description: "Kişinin yüz yapısına özel modern saç tasarımı.", price: 500, durationMinutes: 45 },
+        { name: "Sakal Tasarımı", description: "Detaylı sakal hattı ve bakım yağı uygulaması.", price: 300, durationMinutes: 30 },
+        { name: "Keratin Düzleştirme & Bakım", description: "Yıpranmış saçları onaran yoğun keratin seansı.", price: 900, durationMinutes: 75 },
+        { name: "Saç Boyama & Kamuflaj", description: "Beyaz kırıcı doğal renk tonlama.", price: 750, durationMinutes: 60 },
+      ],
+    },
+    {
+      name: "Nişantaşı Elegance VIP Kuaför",
+      slug: "nisantasi-elegance-vip-kuafor",
+      type: BusinessType.BEAUTY_SALON,
+      description: "Nişantaşı'nda VIP saç tasarımı, manikür, cilt bakımı ve kişisel stil danışmanlığı ile lüks deneyim.",
+      phone: "+90 212 296 3322",
+      email: "nisantasi@oxonomberber.com",
+      address: "Teşvikiye Mah. Valikonağı Cad. No: 76",
+      city: "İstanbul",
+      district: "Şişli",
+      coverImage: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&auto=format&fit=crop&q=80",
+      logo: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=200&auto=format&fit=crop&q=80",
+      active: true,
+      verified: true,
+      staffList: [
+        { name: "Arda", surname: "Şen", bio: "Ünlüler stil danışmanı, master saç uzmanı.", phone: "+90 533 333 0001", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80" },
+        { name: "Cem", surname: "Kurt", bio: "Gelişmiş cilt bakımı ve saç terapisti.", phone: "+90 533 333 0002", image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80" },
+      ],
+      servicesList: [
+        { name: "VIP Saç Kesimi & Stil", description: "Saç analizi, özel yıkama ve stilist kesimi.", price: 750, durationMinutes: 50 },
+        { name: "Premium Sakal Bakımı", description: "Sıcak buhar, organik yağlar ve hat belirleme.", price: 400, durationMinutes: 35 },
+        { name: "Altın Maske Cilt Bakımı", description: "Gözenek temizliği, siyah nokta arındırma ve nem takviyesi.", price: 600, durationMinutes: 45 },
+      ],
+    },
+    {
+      name: "Üsküdar Nostalji Saç & Sakal",
+      slug: "uskudar-nostalji-sac-sakal",
+      type: BusinessType.BARBER,
+      description: "Boğaz kıyısında samimi, güler yüzlü ve kaliteli esnaf berberliği tecrübesi.",
+      phone: "+90 216 555 1234",
+      email: "uskudar@oxonomberber.com",
+      address: "Salacak Mah. Sahil Yolu No: 12",
+      city: "İstanbul",
+      district: "Üsküdar",
+      coverImage: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1200&auto=format&fit=crop&q=80",
+      logo: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=200&auto=format&fit=crop&q=80",
+      active: true,
+      verified: true,
+      staffList: [
+        { name: "Kemal", surname: "Çelik", bio: "Geleneksel berberlik sanatı ustası.", phone: "+90 534 444 0001", image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&auto=format&fit=crop&q=80" },
+      ],
+      servicesList: [
+        { name: "Klasik Saç Kesimi", description: "Yıkama ve fön dahil geleneksel kesim.", price: 350, durationMinutes: 40 },
+        { name: "Ustura Sakal Tıraşı", description: "Köpüklü sıcak havlulu ustura tıraşı.", price: 200, durationMinutes: 25 },
+        { name: "Çocuk Saç Kesimi", description: "Çocuklar için sabırlı ve özenli kesim.", price: 250, durationMinutes: 30 },
+      ],
+    },
+    {
+      name: "Bakırköy Ataköy Prime Kuaför",
+      slug: "bakirkoy-atakoy-prime-kuafor",
+      type: BusinessType.HAIRDRESSER,
+      description: "Modern mimari, hijyenik salon konsepti ve alanında uzman kadrosuyla hizmetinizdeyiz.",
+      phone: "+90 212 560 9988",
+      email: "bakirkoy@oxonomberber.com",
+      address: "Ataköy 5. Kısım Çarşı İçi No: 24",
+      city: "İstanbul",
+      district: "Bakırköy",
+      coverImage: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=1200&auto=format&fit=crop&q=80",
+      logo: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=200&auto=format&fit=crop&q=80",
+      active: true,
+      verified: true,
+      staffList: [
+        { name: "Onur", surname: "Aydın", bio: "Erkek saç trendleri ve saç renklendirme uzmanı.", phone: "+90 535 555 0001", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" },
+      ],
+      servicesList: [
+        { name: "Trend Saç Kesimi", description: "Kişiye özel tasarım ve fön.", price: 450, durationMinutes: 45 },
+        { name: "Sakal Bakımı & Kesim", description: "Sakal bakımı ve özel şekillendirme.", price: 250, durationMinutes: 30 },
+      ],
+    },
+  ]
+
+  for (const bData of businessesData) {
+    const business = await prisma.business.create({
+      data: {
+        ownerId: ownerUser.id,
+        name: bData.name,
+        slug: bData.slug,
+        type: bData.type,
+        description: bData.description,
+        phone: bData.phone,
+        email: bData.email,
+        address: bData.address,
+        city: bData.city,
+        district: bData.district,
+        coverImage: bData.coverImage,
+        logo: bData.logo,
+        active: bData.active,
+        verified: bData.verified,
+      },
+    })
+
+    // Çalışma Saatleri (Pzt-Cmt: 09:00-20:00, Paz: Kapalı)
+    for (let day = 0; day <= 6; day++) {
+      await prisma.businessHours.create({
         data: {
-          name,
-          address,
-          imageUrl: imageUrl,
-          phones: ["(11) 99999-9999", "(11) 99999-9999"],
-          description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ac augue ullamcorper, pharetra orci mollis, auctor tellus. Phasellus pharetra erat ac libero efficitur tempus. Donec pretium convallis iaculis. Etiam eu felis sollicitudin, cursus mi vitae, iaculis magna. Nam non erat neque. In hac habitasse platea dictumst. Pellentesque molestie accumsan tellus id laoreet.",
+          businessId: business.id,
+          dayOfWeek: day,
+          openTime: "09:00",
+          closeTime: "20:00",
+          isClosed: day === 0, // Pazar kapalı
+        },
+      })
+    }
+
+    // Hizmetleri Ekle
+    const createdServices = []
+    for (const sData of bData.servicesList) {
+      const service = await prisma.service.create({
+        data: {
+          businessId: business.id,
+          name: sData.name,
+          description: sData.description,
+          price: sData.price,
+          durationMinutes: sData.durationMinutes,
+        },
+      })
+      createdServices.push(service)
+    }
+
+    // Çalışanları Ekle
+    for (const stData of bData.staffList) {
+      const staff = await prisma.staff.create({
+        data: {
+          businessId: business.id,
+          name: stData.name,
+          surname: stData.surname,
+          bio: stData.bio,
+          phone: stData.phone,
+          image: stData.image,
         },
       })
 
-      for (const service of services) {
-        await prisma.barbershopService.create({
+      // Çalışanın Çalışma Saatleri
+      for (let day = 0; day <= 6; day++) {
+        await prisma.staffWorkingHours.create({
           data: {
-            name: service.name,
-            description: service.description,
-            price: service.price,
-            barbershop: {
-              connect: {
-                id: barbershop.id,
-              },
-            },
-            imageUrl: service.imageUrl,
+            staffId: staff.id,
+            dayOfWeek: day,
+            startTime: "09:00",
+            endTime: "19:00",
+            isWorking: day !== 0,
           },
         })
       }
 
-      barbershops.push(barbershop)
+      // Çalışanı Hizmetlerle İlişkilendir
+      for (const service of createdServices) {
+        await prisma.staffService.create({
+          data: {
+            staffId: staff.id,
+            serviceId: service.id,
+          },
+        })
+      }
+
+      // Örnek Bir Randevu Oluştur (Moda berber için)
+      if (bData.slug === "moda-klasik-berber-salonu" && stData.name === "Mustafa") {
+        const tomorrow = new Date()
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        tomorrow.setHours(14, 0, 0, 0)
+        const tomorrowEnd = new Date(tomorrow)
+        tomorrowEnd.setMinutes(tomorrow.getMinutes() + 45)
+
+        await prisma.booking.create({
+          data: {
+            customerId: customerUser.id,
+            businessId: business.id,
+            serviceId: createdServices[0].id,
+            staffId: staff.id,
+            startAt: tomorrow,
+            endAt: tomorrowEnd,
+            priceSnapshot: createdServices[0].price,
+            durationSnapshot: createdServices[0].durationMinutes,
+            status: BookingStatus.CONFIRMED,
+            customerNote: "Klasik yanlar kısa üstler uzun olsun lütfen.",
+          },
+        })
+      }
     }
 
-    // Fechar a conexão com o banco de dados
-    await prisma.$disconnect()
-  } catch (error) {
-    console.error("Erro ao criar as barbearias:", error)
+    // Örnek Yorumlar
+    await prisma.review.create({
+      data: {
+        customerId: customerUser.id,
+        businessId: business.id,
+        rating: 5,
+        comment: "Harika bir deneyim! Hizmet çok kaliteli, çalışanlar çok ilgili ve güler yüzlü.",
+      },
+    })
   }
+
+  console.log("✅ Seed verisi başarıyla yüklendi!")
 }
 
-seedDatabase()
+main()
+  .catch((e) => {
+    console.error("❌ Seed hatası:", e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

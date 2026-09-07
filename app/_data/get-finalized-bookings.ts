@@ -1,31 +1,27 @@
 "use server"
 
-import { getServerSession } from "next-auth"
-
-import { authOptions } from "../_lib/auth"
+import { getCurrentUser } from "../_lib/auth-service"
 import { db } from "../_lib/prisma"
+import { BookingStatus } from "@prisma/client"
 
 export const getFinalizedBookings = async () => {
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user) return []
+  const user = await getCurrentUser()
+  if (!user) return []
 
   return await db.booking.findMany({
     where: {
-      userId: (session?.user as any).id,
-      date: {
-        lt: new Date(),
-      },
+      customerId: user.id,
+      OR: [
+        { startAt: { lt: new Date() } },
+        { status: BookingStatus.COMPLETED },
+      ],
+      status: { not: BookingStatus.CANCELLED },
     },
     include: {
-      service: {
-        include: {
-          barbershop: true,
-        },
-      },
+      business: true,
+      service: true,
+      staff: true,
     },
-    orderBy: {
-      date: "asc",
-    },
+    orderBy: { startAt: "desc" },
   })
 }

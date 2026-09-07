@@ -1,19 +1,18 @@
 {
-  "name": "the-barber",
-  "version": "0.1.0",
+  "name": "oxonomberber",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky && prisma generate"
+    "prepare": "prisma generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^2.4.2",
     "@hookform/resolvers": "^3.9.0",
     "@prisma/client": "^5.18.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -21,13 +20,14 @@
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
+    "@supabase/ssr": "^0.12.6",
+    "@supabase/supabase-js": "^2.116.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.2.0",
     "lucide-react": "^0.424.0",
     "next": "14.2.5",
-    "next-auth": "^4.24.7",
     "next-themes": "^0.3.0",
     "nextjs-toploader": "^3.6.15",
     "react": "^18",
@@ -45,9 +45,6 @@
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
-    "git-commit-msg-linter": "^5.0.8",
-    "husky": "^9.1.4",
-    "lint-staged": "^15.2.8",
     "postcss": "^8",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.5",

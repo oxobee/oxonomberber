@@ -1,59 +1,62 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { SearchIcon } from "lucide-react"
+import { SearchIcon, MapPinIcon } from "lucide-react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
-import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form"
+import { Form, FormControl, FormField, FormItem } from "./ui/form"
 
 const formSchema = z.object({
-  title: z.string().trim().min(3),
+  query: z.string().optional(),
 })
 
 export const Search = () => {
-  // Hooks
   const router = useRouter()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
+      query: "",
     },
   })
 
-  // Methods
   const onSubmitHandler = (formData: z.infer<typeof formSchema>) => {
-    router.push(`/barbershops?title=${formData.title}`)
+    if (formData.query && formData.query.trim().length > 0) {
+      router.push(`/isletmeler?q=${encodeURIComponent(formData.query.trim())}`)
+    } else {
+      router.push("/isletmeler")
+    }
   }
 
-  // Renders
   return (
     <Form {...form}>
       <form
-        className="flex gap-2"
+        className="flex gap-2 w-full"
         onSubmit={form.handleSubmit(onSubmitHandler)}
       >
         <FormField
-          name="title"
+          name="query"
           control={form.control}
           render={({ field }) => (
             <FormItem className="w-full">
               <FormControl>
-                <Input
-                  className="w-full"
-                  placeholder="Search for barbershops"
-                  {...field}
-                />
+                <div className="relative w-full">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    className="w-full pl-9 bg-background/80 backdrop-blur"
+                    placeholder="Hizmet, berber veya kuaför ara..."
+                    {...field}
+                  />
+                </div>
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">
-          <SearchIcon />
+        <Button type="submit" className="px-5 font-semibold">
+          Ara
         </Button>
       </form>
     </Form>

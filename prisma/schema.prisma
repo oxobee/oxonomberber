@@ -3,94 +3,238 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  BUSINESS_OWNER
+  STAFF
+  ADMIN
+}
+
+enum BusinessType {
+  BARBER
+  HAIRDRESSER
+  BEAUTY_SALON
+  NAIL_SALON
+  OTHER
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  name          String?
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
+  id          String    @id @default(uuid())
+  authUserId  String?   @unique
+  name        String?
+  surname     String?
+  email       String    @unique
+  phone       String?
+  avatar      String?
+  role        UserRole  @default(CUSTOMER)
+
+  ownedBusinesses Business[] @relation("BusinessOwner")
+  staffProfiles   Staff[]    @relation("StaffUser")
+  bookings        Booking[]  @relation("CustomerBookings")
+  favorites       Favorite[]
+  reviews         Review[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authUserId])
+  @@index([email])
+}
+
+model Business {
+  id          String        @id @default(uuid())
+  ownerId     String
+  owner       User          @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String        @unique
+  type        BusinessType  @default(BARBER)
+  description String?
+  phone       String?
+  email       String?
+  address     String
+  city        String        @default("İstanbul")
+  district    String
+  postalCode  String?
+  latitude    Float?
+  longitude   Float?
+  coverImage  String?
+  logo        String?
+  active      Boolean       @default(true)
+  verified    Boolean       @default(false)
+
+  services      Service[]
+  staff         Staff[]
+  businessHours BusinessHours[]
+  bookings      Booking[]
+  favorites     Favorite[]
+  reviews       Review[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([city, district])
+  @@index([type])
+  @@index([ownerId])
+}
+
+model Service {
+  id              String    @id @default(uuid())
+  businessId      String
+  business        Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  price           Decimal   @db.Decimal(10, 2)
+  durationMinutes Int       @default(30)
+  imageUrl        String?
+  active          Boolean   @default(true)
+
+  staffServices StaffService[]
   bookings      Booking[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([businessId])
 }
 
-model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([provider, providerAccountId])
-}
-
-model Session {
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model VerificationToken {
-  identifier String
-  token      String
-  expires    DateTime
-
-  @@id([identifier, token])
-}
-
-model Barbershop {
-  id          String              @id @default(uuid())
+model Staff {
+  id          String    @id @default(uuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation("StaffUser", fields: [userId], references: [id], onDelete: SetNull)
   name        String
-  address     String
-  phones      String[]
-  description String
-  imageUrl    String
-  services    BarbershopService[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  surname     String?
+  phone       String?
+  email       String?
+  image       String?
+  bio         String?
+  active      Boolean   @default(true)
+
+  staffServices StaffService[]
+  workingHours  StaffWorkingHours[]
+  timeOff       StaffTimeOff[]
+  bookings      Booking[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([businessId])
+  @@index([userId])
 }
 
-model BarbershopService {
-  id           String     @id @default(uuid())
-  name         String
-  description  String
-  imageUrl     String
-  price        Decimal    @db.Decimal(10, 2)
-  barbershopId String
-  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
-  bookings     Booking[]
+model StaffService {
+  staffId   String
+  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, serviceId])
+}
+
+model BusinessHours {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int      // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  openTime   String   @default("09:00") // "09:00"
+  closeTime  String   @default("20:00") // "20:00"
+  isClosed   Boolean  @default(false)
+
+  @@unique([businessId, dayOfWeek])
+}
+
+model StaffWorkingHours {
+  id        String  @id @default(uuid())
+  staffId   String
+  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  dayOfWeek Int     // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime String  @default("09:00")
+  endTime   String  @default("19:00")
+  isWorking Boolean @default(true)
+
+  @@unique([staffId, dayOfWeek])
+}
+
+model StaffTimeOff {
+  id        String   @id @default(uuid())
+  staffId   String
+  staff     Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  startAt   DateTime
+  endAt     DateTime
+  reason    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([staffId])
+  @@index([startAt, endAt])
 }
 
 model Booking {
-  id        String            @id @default(uuid())
-  userId    String
-  user      User              @relation(fields: [userId], references: [id])
-  serviceId String
-  service   BarbershopService @relation(fields: [serviceId], references: [id])
-  date      DateTime
+  id                 String        @id @default(uuid())
+  customerId         String
+  customer           User          @relation("CustomerBookings", fields: [customerId], references: [id], onDelete: Cascade)
+  businessId         String
+  business           Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceId          String
+  service            Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staffId            String
+  staff              Staff         @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  startAt            DateTime
+  endAt              DateTime
+  priceSnapshot      Decimal       @db.Decimal(10, 2)
+  durationSnapshot   Int
+  status             BookingStatus @default(CONFIRMED)
+  customerNote       String?
+  cancellationReason String?
+  cancelledAt        DateTime?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([customerId])
+  @@index([businessId])
+  @@index([staffId])
+  @@index([startAt, endAt])
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([customerId, businessId])
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bookingId  String?  @unique
+  rating     Int      @default(5)
+  comment    String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([businessId])
 }

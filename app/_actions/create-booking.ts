@@ -1,24 +1,30 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { getServerSession } from "next-auth"
-
-import { db } from "../_lib/prisma"
-import { authOptions } from "../_lib/auth"
+import { getCurrentUser } from "../_lib/auth-service"
+import { createBookingWithTransaction } from "../_lib/booking-engine"
 
 interface CreateBookingParams {
+  businessId: string
   serviceId: string
+  staffId?: string
   date: Date
+  customerNote?: string
 }
 
 export const createBooking = async (params: CreateBookingParams) => {
-  const user = await getServerSession(authOptions)
+  const user = await getCurrentUser()
+  if (!user) throw new Error("Giriş yapmalısınız")
 
-  if (!user) throw new Error("User not authenticated")
-
-  await db.booking.create({
-    data: { ...params, userId: (user.user as any).id },
+  await createBookingWithTransaction({
+    customerId: user.id,
+    businessId: params.businessId,
+    serviceId: params.serviceId,
+    staffId: params.staffId,
+    startAt: params.date,
+    customerNote: params.customerNote,
   })
-  revalidatePath("/barbershops/[id]")
-  revalidatePath("/bookings")
+
+  revalidatePath("/hesabim/randevularim")
+  revalidatePath("/isletmeler")
 }
