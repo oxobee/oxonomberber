@@ -10,9 +10,8 @@ import {
 } from "./ui/dialog"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
-import { createClient } from "../_lib/supabase/client"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, ShieldCheckIcon, StoreIcon, UserIcon } from "lucide-react"
 
 interface SignInModalProps {
   onSuccess?: () => void
@@ -24,73 +23,114 @@ export const SignInModal = ({ onSuccess }: SignInModalProps) => {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleAuth = async (e: React.FormEvent, customEmail?: string, customPassword?: string) => {
+    if (e) e.preventDefault()
     setLoading(true)
+
+    const targetEmail = customEmail || email
+    const targetPassword = customPassword || password
 
     try {
       if (isRegister) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { name },
-          },
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: targetEmail, password: targetPassword, name }),
         })
-        if (error) throw error
-        toast.success("Hesabınız başarıyla oluşturuldu! Giriş yapılıyor...")
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "Kayıt işlemi başarısız.")
+        toast.success("Hesabınız oluşturuldu! Şimdi giriş yapabilirsiniz.")
+        setIsRegister(false)
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: targetEmail, password: targetPassword }),
         })
-        if (error) throw error
-        toast.success("Başarıyla giriş yapıldı!")
-      }
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "Giriş yapılamadı.")
 
-      if (onSuccess) {
-        onSuccess()
-      } else {
+        toast.success("Başarıyla giriş yapıldı!")
+        if (onSuccess) {
+          onSuccess()
+        }
         window.location.reload()
       }
     } catch (error: any) {
-      toast.error(error.message || "Bir hata oluştu. Lütfen bilgilerinizi kontrol edin.")
+      toast.error(error.message || "Bir hata oluştu.")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-    if (error) {
-      toast.error("Google ile giriş şu an yapılandırılamadı.")
-    }
+  const quickFill = (qEmail: string, qPass: string) => {
+    setEmail(qEmail)
+    setPassword(qPass)
+    handleAuth(null as any, qEmail, qPass)
   }
 
   return (
-    <DialogContent className="w-[90%] max-w-[400px] rounded-2xl">
+    <DialogContent className="w-[92%] max-w-[420px] rounded-3xl p-6">
       <DialogHeader>
         <DialogTitle className="text-xl font-bold">
           {isRegister ? "Hesap Oluştur" : "Giriş Yap"}
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription className="text-xs">
           {isRegister
             ? "Randevularınızı yönetmek için hemen ücretsiz kayıt olun."
-            : "Platformdaki randevularınızı görüntülemek için giriş yapın."}
+            : "Randevu almak ve seanslarınızı yönetmek için giriş yapın."}
         </DialogDescription>
       </DialogHeader>
 
-      <form onSubmit={handleEmailAuth} className="flex flex-col gap-4 mt-2">
+      {/* Hızlı Demo Giriş Butonları (Sadece Giriş Modunda) */}
+      {!isRegister && (
+        <div className="space-y-1.5 p-3 rounded-2xl bg-muted/40 border border-border/70 my-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block text-center">
+            ⚡ Hızlı Test Girişi (Otomatik)
+          </span>
+          <div className="grid grid-cols-1 gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 text-xs hover:border-destructive hover:bg-destructive/10 h-8"
+              onClick={() => quickFill("admin@oxonomberber.com", "Admin123456!")}
+              disabled={loading}
+            >
+              <ShieldCheckIcon className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
+              <span className="truncate">🛡️ Süper Admin Girişi</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 text-xs hover:border-primary hover:bg-primary/10 h-8"
+              onClick={() => quickFill("isletme@oxonomberber.com", "Isletme123456!")}
+              disabled={loading}
+            >
+              <StoreIcon className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              <span className="truncate">💈 İşletme Sahibi Girişi</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 text-xs hover:border-foreground/40 hover:bg-muted h-8"
+              onClick={() => quickFill("musteri@oxonomberber.com", "Musteri123456!")}
+              disabled={loading}
+            >
+              <UserIcon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">🧑‍🦱 Müşteri Girişi</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={(e) => handleAuth(e)} className="flex flex-col gap-3">
         {isRegister && (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">Ad Soyad</Label>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="name" className="text-xs">Ad Soyad</Label>
             <Input
               id="name"
               type="text"
@@ -102,8 +142,8 @@ export const SignInModal = ({ onSuccess }: SignInModalProps) => {
           </div>
         )}
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">E-posta</Label>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="email" className="text-xs">E-posta</Label>
           <Input
             id="email"
             type="email"
@@ -114,8 +154,8 @@ export const SignInModal = ({ onSuccess }: SignInModalProps) => {
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">Şifre</Label>
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="password" className="text-xs">Şifre</Label>
           <Input
             id="password"
             type="password"
@@ -126,43 +166,13 @@ export const SignInModal = ({ onSuccess }: SignInModalProps) => {
           />
         </div>
 
-        <Button type="submit" className="w-full mt-2" disabled={loading}>
+        <Button type="submit" className="w-full mt-2 font-bold" disabled={loading}>
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isRegister ? "Hesap Oluştur" : "Giriş Yap"}
         </Button>
       </form>
 
-      <div className="relative my-2 text-center text-xs text-muted-foreground after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-        <span className="relative z-10 bg-background px-2">veya</span>
-      </div>
-
-      <Button
-        variant="outline"
-        className="w-full gap-2"
-        onClick={handleGoogleLogin}
-      >
-        <svg className="h-4 w-4" viewBox="0 0 24 24">
-          <path
-            fill="currentColor"
-            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-          />
-          <path
-            fill="currentColor"
-            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-          />
-          <path
-            fill="currentColor"
-            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-          />
-          <path
-            fill="currentColor"
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-          />
-        </svg>
-        Google ile Devam Et
-      </Button>
-
-      <div className="text-center text-xs text-muted-foreground mt-2">
+      <div className="text-center text-xs text-muted-foreground mt-1">
         {isRegister ? (
           <p>
             Zaten hesabınız var mı?{" "}
