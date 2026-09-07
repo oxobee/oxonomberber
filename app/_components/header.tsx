@@ -65,6 +65,14 @@ export const Header = () => {
                   </Link>
                 </Button>
 
+                {user.email === "admin@oxonomberber.com" && (
+                  <Button variant="destructive" size="sm" asChild className="gap-1.5 text-xs font-bold">
+                    <Link href="/admin">
+                      Admin Paneli
+                    </Link>
+                  </Button>
+                )}
+
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">

@@ -38,7 +38,6 @@ export async function getCurrentUser() {
       },
     })
   } else if (user && !user.authUserId) {
-    // authUserId henüz bağlanmamışsa bağla
     user = await db.user.update({
       where: { id: user.id },
       data: { authUserId: authUser.id },
@@ -63,6 +62,14 @@ export async function requireBusinessOwner() {
   const user = await requireAuth()
   if (user.role !== UserRole.BUSINESS_OWNER && user.role !== UserRole.ADMIN) {
     redirect("/isletme-ekle")
+  }
+  return user
+}
+
+export async function requireAdmin() {
+  const user = await requireAuth()
+  if (user.role !== UserRole.ADMIN) {
+    redirect("/")
   }
   return user
 }
